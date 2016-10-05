@@ -1,9 +1,8 @@
 from flask import Flask
 
 from google.appengine.ext import ndb
-from mapreduce import base_handler
-from mapreduce.mapreduce_pipeline import MapreducePipeline
-from mapreduce.output_writers import OutputWriter
+from mapreduce import mapreduce_pipeline
+import pipeline
 
 
 class User(ndb.Model):
@@ -11,34 +10,36 @@ class User(ndb.Model):
 
 app = Flask(__name__)
 
-def appengine_mapper(e):
-    pass
+def appengine_mapper(user):
+    print user.name
 
-def appengine_reduce(e):
-    pass
+class TouchPipeline(pipeline.Pipeline):
+    """
+    Pipeline to update the timestamp of entities.
+    """
 
-class Pipeline(base_handler.PipelineBase):
-    def run(self):
-        output = yield MapreducePipeline(
-            "index",
-            "main.index_map",
-            "main.index_reduce",
-            "mapreduce.input_readers.DatastoreInputReader",
-            params={
-                "input_reader": {
-                    "entity_kind": "app.User",
-                }
-            },
-            shards=1
+    def run(self, *args, **kwargs):
+        """ run """
+        mapper_params = {
+            "entity_kind": "app.User",
+        }
+        yield mapreduce_pipeline.MapperPipeline(
+            "Print all usernames",
+            handler_spec="app.appengine_mapper",
+            input_reader_spec="mapreduce.input_readers.DatastoreInputReader",
+            params=mapper_params,
         )
 
-        yield Output(output)
+@app.route('/create_users')
+def create_users():
+    for i in range(5000):
+        User(name=u'User {}'.format(i)).put()
 
-class Output(OutputWriter):
-    def run(self, output):
-        pass
+    return ('', 204)
 
-@app.route('/')
-def hello_world():
-    pipeline = Pipeline()
+@app.route('/run_job')
+def run_job():
+    pipeline = TouchPipeline()
     pipeline.start()
+
+    return 'Job started'

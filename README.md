@@ -1,6 +1,6 @@
 # mapreduce-test
 
-The purpose of this project is to figure out how to use mapreduce for Python on App Engine.
+The purpose of this project is to figure out how to use [mapreduce](https://github.com/GoogleCloudPlatform/appengine-mapreduce) for Python on App Engine.
 
 ## Instructions
 * Run ./install_libs.sh to install all the requirements
